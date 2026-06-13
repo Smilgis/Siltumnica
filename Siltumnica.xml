@@ -1,1 +1,53 @@
-<mxlibrary>[]</mxlibrary>
+#include <SoftwareSerial.h>
+
+// Definējam pinus
+const int RX_PIN = 10;
+const int TX_PIN = 11;
+const int EN_PIN = 3; // DE un RE kontroles pins
+
+// Izveidojam virtuālo seriālo portu
+SoftwareSerial RS485Serial(RX_PIN, TX_PIN);
+
+// maini šo uz 'false', ja šis Arduino būs saņēmējs
+const bool IZVELE_SUTIT = true; 
+
+void setup() {
+  // Inicializējam datora Serial monitoru
+  Serial.begin(9600);
+  
+  // Inicializējam MAX485 vadību
+  pinMode(EN_PIN, OUTPUT);
+  digitalWrite(EN_PIN, LOW); // Pēc noklusējuma klausāmies (Saņemam)
+
+  // Sākam RS485 sakarus
+  RS485Serial.begin(4800); // MAX485 stabilitātei labāk izmantot zemāku ātrumu
+  
+  Serial.println("MAX485 Modulis gatavs darbībai.");
+}
+
+void loop() {
+  if (IZVELE_SUTIT) {
+    // ================= SŪTĪŠANAS REŽĪMS =================
+    digitalWrite(EN_PIN, HIGH); // Ieslēdzam sūtīšanu
+    delay(10);
+    
+    RS485Serial.println("Sveiciens no Arduino!");
+    Serial.println("Dati nosūtīti.");
+    
+    delay(10); 
+    digitalWrite(EN_PIN, LOW); // Atgriežamies saņemšanas režīmā
+    
+    delay(2000); // Gaidām 2 sekundes pirms sūtīt atkal
+    
+  } else {
+    // ================= SAŅEMŠANAS REŽĪMS =================
+    digitalWrite(EN_PIN, LOW); // Drošībai pārliecināmies, ka klausāmies
+    
+    if (RS485Serial.available()) {
+      while (RS485Serial.available()) {
+        char saņemtaisSimbols = RS485Serial.read();
+        Serial.print(saņemtaisSimbols); // Parādām saņemto uz datora ekrāna
+      }
+    }
+  }
+}
